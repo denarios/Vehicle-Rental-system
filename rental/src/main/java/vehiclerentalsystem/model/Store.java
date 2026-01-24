@@ -3,15 +3,16 @@ package vehiclerentalsystem.model;
 import java.time.LocalDate;
 import java.util.*;
 
+import vehiclerentalsystem.enums.ReservationStatus;
 import vehiclerentalsystem.enums.VehicleStatus;
 import vehiclerentalsystem.enums.VehicleType;
 
 public class Store {
 
-    private final Inventory inventory;
-    private final Location location;
-    private final List<Reservation> reservationList;
-    private final UUID storeId;
+    private Inventory inventory;
+    private Location location;
+    private List<Reservation> reservationList;
+    private UUID storeId;
 
     public Store(String state, String district, String pincode) {
         this.inventory = new Inventory();
@@ -30,7 +31,7 @@ public class Store {
 
     // Vehicle is available if:
     // 1. Vehicle is ACTIVE (not damaged)
-    // 2. Vehicle ID not present in reservation list
+    // 2. Vehicle ID not present in active reservations
     public boolean isVehicleAvailable(Vehicle vehicle) {
 
         if (vehicle.getStatus() != VehicleStatus.ACTIVE) {
@@ -38,9 +39,8 @@ public class Store {
         }
 
         return reservationList.stream()
-                .noneMatch(r ->
-                        r.getVehicle().getId().equals(vehicle.getId())
-                );
+                .filter(r -> r.getStatus() == ReservationStatus.ACTIVE)
+                .noneMatch(r -> r.getVehicle().getId().equals(vehicle.getId()));
     }
 
     public Map<VehicleType, List<Vehicle>> getAvailableVehicles() {
@@ -82,22 +82,30 @@ public class Store {
     /* ---------------- Reservation Management ---------------- */
 
     public Reservation reserveVehicle(User user,
-                                      Vehicle vehicle,
-                                      LocalDate fromDate,
-                                      LocalDate toDate) {
+            Vehicle vehicle,
+            LocalDate fromDate,
+            LocalDate toDate) {
 
         if (!isVehicleAvailable(vehicle)) {
-            throw new IllegalStateException("Vehicle is not available");
+            throw new IllegalStateException("Vehicle is not available for reservation");
         }
 
-        Reservation reservation =
-                new Reservation(user, vehicle, fromDate, toDate);
+        Reservation reservation = new Reservation(user, vehicle, fromDate, toDate);
 
         reservationList.add(reservation);
         return reservation;
     }
 
-    /* ---------------- Cleanup (Cron / Scheduler) ---------------- */
+    public List<Reservation> getReservations() {
+        return new ArrayList<>(reservationList);
+    }
+
+    public Reservation getReservationById(UUID reservationId) {
+        return reservationList.stream()
+                .filter(r -> r.getReservationId().equals(reservationId))
+                .findFirst()
+                .orElseThrow(() -> new NoSuchElementException("Reservation not found: " + reservationId));
+    }
 
     /* ---------------- Getters ---------------- */
 
@@ -107,5 +115,18 @@ public class Store {
 
     public Location getLocation() {
         return location;
+    }
+
+    public Inventory getInventory() {
+        return inventory;
+    }
+
+    public Vehicle getVehicleById(UUID vehicleId) {
+
+        return inventory.getAllVehicle().values().stream()
+                .flatMap(inv -> inv.getAllVehicles().stream())
+                .filter(v -> v.getId().equals(vehicleId))
+                .findFirst()
+                .orElseThrow(() -> new NoSuchElementException("Vehicle not found: " + vehicleId));
     }
 }

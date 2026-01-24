@@ -3,24 +3,28 @@ package vehiclerentalsystem.model;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import vehiclerentalsystem.enums.ReservationStatus;
+
 public class Reservation {
 
-    private final UUID reservationId;
-    private final User user;
-    private final Vehicle vehicle;
-    private final LocalDate fromDate;
-    private final LocalDate toDate;
+    private UUID reservationId;
+    private User user;
+    private Vehicle vehicle;
+    private LocalDate fromDate;
+    private LocalDate toDate;
+    private ReservationStatus status;
 
     public Reservation(User user,
-                       Vehicle vehicle,
-                       LocalDate fromDate,
-                       LocalDate toDate) {
+            Vehicle vehicle,
+            LocalDate fromDate,
+            LocalDate toDate) {
 
         this.reservationId = UUID.randomUUID();
         this.user = user;
         this.vehicle = vehicle;
         this.fromDate = fromDate;
         this.toDate = toDate;
+        this.status = ReservationStatus.ACTIVE;
     }
 
     public UUID getReservationId() {
@@ -43,8 +47,17 @@ public class Reservation {
         return toDate;
     }
 
+    public ReservationStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ReservationStatus status) {
+        this.status = status;
+    }
+
     /** Reservation active for a given date */
     public boolean isActive(LocalDate date) {
-        return !date.isBefore(fromDate) && !date.isAfter(toDate);
+        return status == ReservationStatus.ACTIVE &&
+                !date.isBefore(fromDate) && !date.isAfter(toDate);
     }
 }

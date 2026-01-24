@@ -3,16 +3,14 @@ package vehiclerentalsystem.model;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import vehiclerentalsystem.enums.VehicleType;
-import vehiclerentalsystem.model.Store;
-import vehiclerentalsystem.model.User;
-import vehiclerentalsystem.model.Vehicle;
 
 public class VehicleRentalSystem {
 
-    private final List<User> users;
-    private final List<Store> stores;
+    private  List<User> users;
+    private  List<Store> stores;
 
     public VehicleRentalSystem() {
         this.users = new ArrayList<>();
@@ -40,12 +38,24 @@ public class VehicleRentalSystem {
     }
 
     /* -------- Search -------- */
+    public Store getStoreById(UUID storeId) {
+        return stores.stream()
+                .filter(store -> store.getStoreId().equals(storeId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+    }
+
+    public User getUserById(UUID userId) {
+        return users.stream()
+                .filter(user -> user.getId().equals(userId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
 
     public void showAvailableVehiclesAcrossStores() {
         for (Store store : stores) {
             System.out.println("Store ID: " + store.getStoreId());
-            Map<VehicleType, List<Vehicle>> available =
-                    store.getAvailableVehicles();
+            Map<VehicleType, List<Vehicle>> available = store.getAvailableVehicles();
 
             if (available.isEmpty()) {
                 System.out.println("  No vehicles available");

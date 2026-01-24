@@ -4,9 +4,10 @@ import java.util.UUID;
 
 public class User {
 
-    private final UUID id;
-    private final String name;
-    private final boolean drivingLicence;
+    private  UUID id;
+    private  String name;
+    private  boolean drivingLicence;
+
 
     public User(String name, boolean drivingLicence) {
         this.id = UUID.randomUUID();
