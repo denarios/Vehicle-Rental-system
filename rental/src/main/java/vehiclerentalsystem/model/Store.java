@@ -6,19 +6,35 @@ import java.util.*;
 import vehiclerentalsystem.enums.ReservationStatus;
 import vehiclerentalsystem.enums.VehicleStatus;
 import vehiclerentalsystem.enums.VehicleType;
+import vehiclerentalsystem.strategy.PricingContext;
+import vehiclerentalsystem.strategy.PricingStrategy;
 
+/**
+ * Represents a rental store location with inventory and reservations.
+ * 
+ * Enhanced with Strategy Pattern integration:
+ * - Uses PricingContext to determine pricing strategy
+ * - Calculates total price when creating reservations
+ */
 public class Store {
 
     private Inventory inventory;
     private Location location;
     private List<Reservation> reservationList;
     private UUID storeId;
+    private String storeName; // Store name for identification
 
-    public Store(String state, String district, String pincode) {
+    public Store(String state, String city, String district, String pincode) {
         this.inventory = new Inventory();
-        this.location = new Location(state, district, pincode);
+        this.location = new Location(state, city, district, pincode);
         this.reservationList = new ArrayList<>();
         this.storeId = UUID.randomUUID();
+        this.storeName = city + " Store";
+    }
+
+    // Legacy constructor for backward compatibility
+    public Store(String state, String district, String pincode) {
+        this(state, district, district, pincode);
     }
 
     /* ---------------- Vehicle Management ---------------- */
@@ -81,6 +97,10 @@ public class Store {
 
     /* ---------------- Reservation Management ---------------- */
 
+    /**
+     * Reserve a vehicle with automatic pricing strategy selection.
+     * Uses the Strategy Pattern to determine the best pricing.
+     */
     public Reservation reserveVehicle(User user,
             Vehicle vehicle,
             LocalDate fromDate,
@@ -90,7 +110,36 @@ public class Store {
             throw new IllegalStateException("Vehicle is not available for reservation");
         }
 
-        Reservation reservation = new Reservation(user, vehicle, fromDate, toDate);
+        // Use Strategy Pattern to determine pricing
+        PricingStrategy strategy = PricingContext.determineStrategy(fromDate, toDate);
+        double totalPrice = PricingContext.calculateWithBestStrategy(vehicle, fromDate, toDate);
+
+        Reservation reservation = new Reservation(user, vehicle, fromDate, toDate,
+                totalPrice, strategy.getStrategyName());
+
+        reservationList.add(reservation);
+        return reservation;
+    }
+
+    /**
+     * Reserve a vehicle with a specific pricing strategy.
+     * Allows manual override of automatic strategy selection.
+     */
+    public Reservation reserveVehicle(User user,
+            Vehicle vehicle,
+            LocalDate fromDate,
+            LocalDate toDate,
+            PricingStrategy strategy) {
+
+        if (!isVehicleAvailable(vehicle)) {
+            throw new IllegalStateException("Vehicle is not available for reservation");
+        }
+
+        long days = java.time.temporal.ChronoUnit.DAYS.between(fromDate, toDate) + 1;
+        double totalPrice = strategy.calculatePrice(vehicle, (int) days);
+
+        Reservation reservation = new Reservation(user, vehicle, fromDate, toDate,
+                totalPrice, strategy.getStrategyName());
 
         reservationList.add(reservation);
         return reservation;
@@ -111,6 +160,10 @@ public class Store {
 
     public UUID getStoreId() {
         return storeId;
+    }
+
+    public String getStoreName() {
+        return storeName;
     }
 
     public Location getLocation() {

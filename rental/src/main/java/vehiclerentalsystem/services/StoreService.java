@@ -1,15 +1,27 @@
 package vehiclerentalsystem.services;
 
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+
 import vehiclerentalsystem.enums.VehicleType;
 import vehiclerentalsystem.model.Store;
 import vehiclerentalsystem.model.Vehicle;
 import vehiclerentalsystem.model.VehicleRentalSystem;
 
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
+/**
+ * Service layer for store management.
+ * 
+ * Uses Redis caching for:
+ * - getAllStores() - Cached for 30 minutes
+ * - getStoreById() - Cached per store ID
+ * 
+ * Cache is invalidated when stores are created/modified.
+ */
 @Service
 public class StoreService {
 
@@ -19,6 +31,11 @@ public class StoreService {
         this.system = system;
     }
 
+    /**
+     * Create a new store.
+     * Evicts the "stores" cache to ensure fresh data.
+     */
+    @CacheEvict(value = "stores", allEntries = true)
     public Store createStore(String state, String district, String pincode) {
         if (state == null || state.trim().isEmpty()) {
             throw new IllegalArgumentException("State cannot be empty");
@@ -35,10 +52,20 @@ public class StoreService {
         return store;
     }
 
+    /**
+     * Get all stores.
+     * Results are cached for 30 minutes (configured in RedisConfig).
+     */
+    @Cacheable(value = "stores", key = "'all'")
     public List<Store> getAllStores() {
         return system.getAllStores();
     }
 
+    /**
+     * Get store by ID.
+     * Results are cached per store ID.
+     */
+    @Cacheable(value = "stores", key = "#storeId")
     public Store getStoreById(UUID storeId) {
         return system.getStoreById(storeId);
     }

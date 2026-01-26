@@ -15,16 +15,21 @@ public class Inventory {
 
         // Create inventory only if not present
         inventoryMap.computeIfAbsent(type, t -> {
-            if (t == VehicleType.BIKE) return new BikeInventory();
-            if (t == VehicleType.CAR) return new CarInventory();
-            throw new IllegalArgumentException("Unknown vehicle type");
+            if (t == VehicleType.BIKE)
+                return new BikeInventory();
+            if (t == VehicleType.CAR)
+                return new CarInventory();
+            if (t == VehicleType.TRUCK)
+                return new TruckInventory();
+            throw new IllegalArgumentException("Unknown vehicle type: " + t);
         }).addVehicle(vehicle);
     }
 
     public VehicleInventory getInventory(VehicleType type) {
         return inventoryMap.get(type);
     }
-    public Map<VehicleType, VehicleInventory> getAllVehicle(){
+
+    public Map<VehicleType, VehicleInventory> getAllVehicle() {
         return inventoryMap;
-    } 
+    }
 }

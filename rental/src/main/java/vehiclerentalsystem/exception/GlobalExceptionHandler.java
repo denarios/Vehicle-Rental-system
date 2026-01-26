@@ -28,6 +28,13 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    @ExceptionHandler(vehiclerentalsystem.lock.LockAcquisitionException.class)
+    public ResponseEntity<Map<String, Object>> handleLockAcquisition(
+            vehiclerentalsystem.lock.LockAcquisitionException ex) {
+        // 409 CONFLICT - Resource is being modified by another request
+        return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
         return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred: " + ex.getMessage());
