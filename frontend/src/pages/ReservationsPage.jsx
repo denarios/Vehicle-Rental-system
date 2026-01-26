@@ -1,8 +1,22 @@
 import { useState, useEffect } from 'react';
-import { FiPlus, FiCheck, FiX, FiCalendar } from 'react-icons/fi';
+import { FiPlus, FiCheck, FiX, FiDollarSign, FiTag } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { userApi, storeApi, vehicleApi, reservationApi } from '../services/api';
 import Modal from '../components/Modal';
+
+// Default daily rates for each vehicle type (matches backend VehicleFactory)
+const VEHICLE_PRICING = {
+    BIKE: { dailyRate: 25, emoji: '🏍️' },
+    CAR: { dailyRate: 50, emoji: '🚗' },
+    TRUCK: { dailyRate: 100, emoji: '🚚' },
+};
+
+// Pricing strategy info for display
+const PRICING_STRATEGIES = {
+    STANDARD: { label: 'Standard', color: 'var(--gray-400)', description: 'Base rate' },
+    PEAK_SEASON: { label: 'Peak Season', color: 'var(--warning-400)', description: '+20% (Dec/Jan)' },
+    WEEKLY_DISCOUNT: { label: 'Weekly Discount', color: 'var(--success-400)', description: '-10% (7+ days)' },
+};
 
 function ReservationsPage() {
     const [stores, setStores] = useState([]);
@@ -138,11 +152,60 @@ function ReservationsPage() {
     };
 
     const getVehicleEmoji = (type) => {
-        return type === 'CAR' ? '🚗' : '🏍️';
+        return VEHICLE_PRICING[type]?.emoji || '🚙';
+    };
+
+    const getVehicleDailyRate = (type) => {
+        return VEHICLE_PRICING[type]?.dailyRate || 50;
+    };
+
+    const getPricingStrategyInfo = (strategy) => {
+        return PRICING_STRATEGIES[strategy] || PRICING_STRATEGIES.STANDARD;
+    };
+
+    // Calculate estimated price for preview in modal
+    const calculateEstimatedPrice = () => {
+        if (!formData.vehicleId || !formData.fromDate || !formData.toDate) {
+            return null;
+        }
+
+        const vehicle = getAllAvailableVehiclesFlat().find(v => v.id === formData.vehicleId);
+        if (!vehicle) return null;
+
+        const from = new Date(formData.fromDate);
+        const to = new Date(formData.toDate);
+        const days = Math.ceil((to - from) / (1000 * 60 * 60 * 24)) + 1;
+
+        if (days <= 0) return null;
+
+        const dailyRate = vehicle.dailyRate || getVehicleDailyRate(vehicle.type);
+        let basePrice = dailyRate * days;
+        let strategy = 'STANDARD';
+
+        // Check for peak season (December or January)
+        const month = from.getMonth() + 1;
+        if (month === 12 || month === 1) {
+            basePrice *= 1.20;
+            strategy = 'PEAK_SEASON';
+        }
+        // Check for weekly discount (7+ days)
+        else if (days >= 7) {
+            basePrice *= 0.90;
+            strategy = 'WEEKLY_DISCOUNT';
+        }
+
+        return {
+            days,
+            dailyRate,
+            totalPrice: basePrice.toFixed(2),
+            strategy,
+            strategyInfo: getPricingStrategyInfo(strategy),
+        };
     };
 
     // Get today's date in YYYY-MM-DD format for min date
     const today = new Date().toISOString().split('T')[0];
+    const priceEstimate = calculateEstimatedPrice();
 
     return (
         <div className="animate-fade-in">
@@ -199,65 +262,97 @@ function ReservationsPage() {
                                     <th>Vehicle</th>
                                     <th>From</th>
                                     <th>To</th>
+                                    <th>Price</th>
+                                    <th>Strategy</th>
                                     <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {reservations.map((res) => (
-                                    <tr key={res.reservationId}>
-                                        <td>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                <div style={{
-                                                    width: '32px',
-                                                    height: '32px',
-                                                    borderRadius: '50%',
-                                                    background: 'var(--gradient-primary)',
+                                {reservations.map((res) => {
+                                    const strategyInfo = getPricingStrategyInfo(res.pricingStrategy);
+                                    return (
+                                        <tr key={res.reservationId}>
+                                            <td>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                    <div style={{
+                                                        width: '32px',
+                                                        height: '32px',
+                                                        borderRadius: '50%',
+                                                        background: 'var(--gradient-primary)',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        fontSize: '0.8rem',
+                                                        color: 'white'
+                                                    }}>
+                                                        {res.user?.name?.charAt(0) || '?'}
+                                                    </div>
+                                                    <span>{res.user?.name || 'Unknown'}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    {getVehicleEmoji(res.vehicle?.type)} {res.vehicle?.type || 'Unknown'}
+                                                </span>
+                                            </td>
+                                            <td>{res.fromDate}</td>
+                                            <td>{res.toDate}</td>
+                                            <td>
+                                                <span style={{
+                                                    color: 'var(--success-400)',
+                                                    fontWeight: '600',
                                                     display: 'flex',
                                                     alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    fontSize: '0.8rem',
-                                                    color: 'white'
+                                                    gap: '4px'
                                                 }}>
-                                                    {res.user?.name?.charAt(0) || '?'}
-                                                </div>
-                                                <span>{res.user?.name || 'Unknown'}</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                {getVehicleEmoji(res.vehicle?.type)} {res.vehicle?.type || 'Unknown'}
-                                            </span>
-                                        </td>
-                                        <td>{res.fromDate}</td>
-                                        <td>{res.toDate}</td>
-                                        <td>
-                                            <span className={`badge ${getStatusBadge(res.status)}`}>
-                                                {res.status}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            {res.status === 'ACTIVE' && (
-                                                <div style={{ display: 'flex', gap: '8px' }}>
-                                                    <button
-                                                        className="btn btn-success btn-sm"
-                                                        onClick={() => handleComplete(res.reservationId)}
-                                                        title="Mark as Complete"
-                                                    >
-                                                        <FiCheck />
-                                                    </button>
-                                                    <button
-                                                        className="btn btn-danger btn-sm"
-                                                        onClick={() => handleCancel(res.reservationId)}
-                                                        title="Cancel"
-                                                    >
-                                                        <FiX />
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
+                                                    <FiDollarSign />
+                                                    {res.totalPrice?.toFixed(2) || 'N/A'}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span
+                                                    style={{
+                                                        color: strategyInfo.color,
+                                                        fontSize: '0.85rem',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '4px'
+                                                    }}
+                                                    title={strategyInfo.description}
+                                                >
+                                                    <FiTag />
+                                                    {strategyInfo.label}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span className={`badge ${getStatusBadge(res.status)}`}>
+                                                    {res.status}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {res.status === 'ACTIVE' && (
+                                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                                        <button
+                                                            className="btn btn-success btn-sm"
+                                                            onClick={() => handleComplete(res.reservationId)}
+                                                            title="Mark as Complete"
+                                                        >
+                                                            <FiCheck />
+                                                        </button>
+                                                        <button
+                                                            className="btn btn-danger btn-sm"
+                                                            onClick={() => handleCancel(res.reservationId)}
+                                                            title="Cancel"
+                                                        >
+                                                            <FiX />
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
@@ -320,7 +415,7 @@ function ReservationsPage() {
                             <option value="">Choose a vehicle</option>
                             {getAllAvailableVehiclesFlat().map((vehicle) => (
                                 <option key={vehicle.id} value={vehicle.id}>
-                                    {getVehicleEmoji(vehicle.type)} {vehicle.type} - {vehicle.id.substring(0, 8)}...
+                                    {getVehicleEmoji(vehicle.type)} {vehicle.type} - ${vehicle.dailyRate || getVehicleDailyRate(vehicle.type)}/day - {vehicle.id.substring(0, 8)}...
                                 </option>
                             ))}
                         </select>
@@ -353,6 +448,40 @@ function ReservationsPage() {
                             />
                         </div>
                     </div>
+
+                    {/* Price Estimate Preview */}
+                    {priceEstimate && (
+                        <div style={{
+                            background: 'var(--gray-800)',
+                            borderRadius: '8px',
+                            padding: '16px',
+                            marginTop: '16px',
+                            border: '1px solid var(--gray-700)'
+                        }}>
+                            <h4 style={{ marginBottom: '12px', fontSize: '0.95rem' }}>
+                                💰 Estimated Price
+                            </h4>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                <span style={{ color: 'var(--gray-400)' }}>Daily Rate:</span>
+                                <span>${priceEstimate.dailyRate}/day</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                <span style={{ color: 'var(--gray-400)' }}>Duration:</span>
+                                <span>{priceEstimate.days} day{priceEstimate.days > 1 ? 's' : ''}</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                <span style={{ color: 'var(--gray-400)' }}>Pricing Strategy:</span>
+                                <span style={{ color: priceEstimate.strategyInfo.color }}>
+                                    {priceEstimate.strategyInfo.label} {priceEstimate.strategyInfo.description}
+                                </span>
+                            </div>
+                            <hr style={{ border: 'none', borderTop: '1px solid var(--gray-700)', margin: '12px 0' }} />
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1rem', fontWeight: '600' }}>
+                                <span>Total:</span>
+                                <span style={{ color: 'var(--success-400)' }}>${priceEstimate.totalPrice}</span>
+                            </div>
+                        </div>
+                    )}
                 </form>
             </Modal>
         </div>

@@ -30,7 +30,7 @@ function StoresPage() {
             for (const store of storesData) {
                 try {
                     const [vehiclesRes, reservationsRes] = await Promise.all([
-                        vehicleApi.getAll(store.storeId),
+                        vehicleApi.getByStore(store.storeId),
                         reservationApi.getByStore(store.storeId),
                     ]);
 

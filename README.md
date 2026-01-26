@@ -188,6 +188,145 @@ npm run preview
 
 ---
 
+## 🔐 Demo Credentials & Quick Start
+
+The application comes with **pre-populated demo data** for immediate testing. No additional setup required!
+
+### 🎭 Test Accounts
+
+#### Customer Account
+```
+Email: pranjal.goyal@kfintech.com
+Password: password123
+Role: Customer (can browse vehicles, make reservations)
+```
+
+#### Store Owner Account
+```
+Email: raj.hyderabad@rental.com
+Password: store123
+Role: Store Owner (can manage stores, vehicles, view analytics)
+```
+
+#### Admin Account
+```
+Email: admin@rental.com
+Password: admin123
+Role: Admin (full system access)
+```
+
+### 🏙️ Pre-populated Demo Data
+
+The system initializes with the following data:
+
+**3 Stores (Indian Cities):**
+- 🏙️ **Hyderabad, Telangana** - 4 vehicles
+- 🏙️ **Bangalore, Karnataka** - 3 vehicles
+- 🏙️ **Mumbai, Maharashtra** - 2 vehicles
+
+**9 Total Vehicles:**
+- Cars: Various models with 5-passenger capacity
+- Bikes: 2-passenger capacity
+- Trucks: 10-ton cargo capacity
+
+All vehicles are initialized with `ACTIVE` status and ready for reservations.
+
+### 🚀 Quick Start Guide
+
+1. **Start the Application**
+   ```bash
+   # Terminal 1 - Backend
+   cd rental
+   mvn spring-boot:run
+   
+   # Terminal 2 - Frontend
+   cd frontend
+   npm run dev
+   ```
+
+2. **Access the Application**
+   - Open browser: http://localhost:3000
+   - Login with customer credentials (see above)
+
+3. **Test Core Features**
+   
+   **Browse Vehicles:**
+   - Navigate to "Browse Vehicles" page
+   - Select a city (e.g., Hyderabad)
+   - Click "Search" to see available vehicles
+   - Filter by vehicle type (Cars/Bikes/Trucks)
+
+   **Make a Reservation:**
+   - From Browse Vehicles, click "Book Now"
+   - Select dates (future dates only)
+   - Submit reservation
+
+   **View Dashboard:**
+   - Click "Dashboard" to see system statistics
+   - View stores, vehicles, and reservation counts
+
+   **Search Vehicles (Specification Pattern):**
+   - Navigate to "Vehicles" page
+   - Select a store (e.g., Hyderabad)
+   - Use advanced filters:
+     - Vehicle Type (CAR/BIKE/TRUCK)
+     - Status (ACTIVE/INACTIVE)
+     - Price Range (e.g., minPrice: 25, maxPrice: 100)
+
+   **Manage Reservations:**
+   - Navigate to "Reservations" page
+   - View active reservations
+   - Complete or cancel reservations
+
+### 📊 Observer Pattern Demo
+
+The system includes an **Observer Pattern** implementation for event tracking:
+
+**Registered Observers:**
+- 🔔 **LoggingObserver** - Logs all reservation events
+- 📧 **EmailNotificationObserver** - Simulates email notifications
+- 📈 **AnalyticsObserver** - Tracks reservation analytics
+
+When you create, complete, or cancel a reservation, all observers are notified automatically.
+
+### ⚡ API Testing (Optional)
+
+You can also test the REST API directly using tools like **Postman** or **curl**:
+
+**Example: Search vehicles by location**
+```bash
+curl http://localhost:8080/api/vehicles/search?city=Hyderabad&state=Telangana
+```
+
+**Example: Search with Specification Pattern**
+```bash
+curl "http://localhost:8080/api/vehicles/search/{storeId}?type=CAR&status=ACTIVE&minPrice=25&maxPrice=100"
+```
+
+### 🎯 Design Patterns in Action
+
+**Factory Pattern:**
+- Navigate to "Vehicles" page
+- Add a new vehicle - the system uses `VehicleFactory` to create the appropriate type
+
+**Strategy Pattern:**
+- Pricing is handled by `PricingStrategy` implementations
+- Standard pricing: BIKE ($25), CAR ($50), TRUCK ($100)
+
+**Specification Pattern:**
+- Use advanced search filters on Vehicles page
+- Combine multiple criteria (type + status + price range)
+- Specifications are composable using AND/OR logic
+
+**Observer Pattern:**
+- Create/Complete/Cancel a reservation
+- Check backend console logs to see observers being notified
+
+**Singleton Pattern:**
+- All Spring beans (Services, Controllers) are managed as singletons by Spring IoC
+
+---
+
 ## 📡 API Documentation
 
 ### Base URL

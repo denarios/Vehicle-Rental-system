@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react';
-import { FiUsers, FiMapPin, FiTruck, FiCalendar, FiArrowRight } from 'react-icons/fi';
+import { FiUsers, FiMapPin, FiTruck, FiCalendar, FiArrowRight, FiDollarSign } from 'react-icons/fi';
 import { userApi, storeApi, vehicleApi, reservationApi } from '../services/api';
+
+// Vehicle emoji mapping
+const getVehicleEmoji = (type) => {
+    const emojis = { CAR: '🚗', BIKE: '🏍️', TRUCK: '🚚' };
+    return emojis[type] || '🚙';
+};
 
 function Dashboard({ onNavigate }) {
     const [stats, setStats] = useState({
@@ -33,7 +39,7 @@ function Dashboard({ onNavigate }) {
             for (const store of stores) {
                 try {
                     const [vehiclesRes, reservationsRes] = await Promise.all([
-                        vehicleApi.getAll(store.storeId),
+                        vehicleApi.getByStore(store.storeId),
                         reservationApi.getByStore(store.storeId),
                     ]);
 
@@ -144,14 +150,14 @@ function Dashboard({ onNavigate }) {
 
                 <div className="card">
                     <div className="card-header">
-                        <h4 className="card-title">System Overview</h4>
+                        <h4 className="card-title">System Features</h4>
                     </div>
-                    <div style={{ color: 'var(--gray-400)', lineHeight: '1.8' }}>
-                        <p>✅ Spring Boot Backend Running on port 8080</p>
+                    <div style={{ color: 'var(--gray-400)', lineHeight: '1.8', fontSize: '0.9rem' }}>
+                        <p>✅ <strong>Factory Pattern</strong> - Vehicle creation (Car, Bike, Truck)</p>
+                        <p>✅ <strong>Strategy Pattern</strong> - Dynamic pricing strategies</p>
                         <p>✅ RESTful API with Service Layer</p>
-                        <p>✅ Global Exception Handling</p>
                         <p>✅ Reservation Status Tracking</p>
-                        <p>✅ Input Validation</p>
+                        <p>✅ Automatic Price Calculation</p>
                     </div>
                 </div>
             </div>
@@ -171,9 +177,10 @@ function Dashboard({ onNavigate }) {
                             <thead>
                                 <tr>
                                     <th>User</th>
-                                    <th>Vehicle Type</th>
+                                    <th>Vehicle</th>
                                     <th>From</th>
                                     <th>To</th>
+                                    <th>Price</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
@@ -181,9 +188,12 @@ function Dashboard({ onNavigate }) {
                                 {recentReservations.map((res) => (
                                     <tr key={res.reservationId}>
                                         <td>{res.user?.name || 'Unknown'}</td>
-                                        <td>{res.vehicle?.type || 'Unknown'}</td>
+                                        <td>{getVehicleEmoji(res.vehicle?.type)} {res.vehicle?.type || 'Unknown'}</td>
                                         <td>{res.fromDate}</td>
                                         <td>{res.toDate}</td>
+                                        <td style={{ color: 'var(--success-400)' }}>
+                                            {res.totalPrice ? `$${res.totalPrice.toFixed(2)}` : '-'}
+                                        </td>
                                         <td>
                                             <span className={`badge ${getStatusBadge(res.status)}`}>
                                                 {res.status}
