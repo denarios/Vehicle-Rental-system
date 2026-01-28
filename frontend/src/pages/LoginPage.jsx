@@ -52,7 +52,7 @@ function LoginPage() {
         switch (role) {
             case 'customer':
                 setFormData({
-                    email: 'pranjal.goyal@kfintech.com',
+                    email: 'pranjalg984@gmail.com',
                     password: 'password123',
                 });
                 break;

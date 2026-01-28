@@ -196,7 +196,7 @@ The application comes with **pre-populated demo data** for immediate testing. No
 
 #### Customer Account
 ```
-Email: pranjal.goyal@kfintech.com
+Email: pranjalg984@gmail.com
 Password: password123
 Role: Customer (can browse vehicles, make reservations)
 ```

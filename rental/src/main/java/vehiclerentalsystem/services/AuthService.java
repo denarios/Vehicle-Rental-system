@@ -68,7 +68,7 @@ public class AuthService {
         // Customer
         User customer = new User(
                 "Pranjal Goyal",
-                "pranjal.goyal@kfintech.com",
+                "pranjalg984@gmail.com",
                 "password123",
                 true,
                 vehiclerentalsystem.enums.UserRole.CUSTOMER);
@@ -84,7 +84,7 @@ public class AuthService {
         system.addUser(admin);
 
         System.out.println("✅ Created default users:");
-        System.out.println("   Customer: pranjal.goyal@kfintech.com / password123");
+        System.out.println("   Customer: pranjalg984@gmail.com / password123");
         System.out.println("   Admin: admin@rental.com / admin123");
     }
 }
